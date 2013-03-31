@@ -4,3 +4,8 @@ target
 .idea
 *.i??
 *~
+.settings/**
+.project
+.factorypath
+.classpath
+.cache

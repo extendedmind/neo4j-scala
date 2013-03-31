@@ -31,7 +31,7 @@ class TypedExecutionResultImpl(val er: ExecutionResult) extends TypedExecutionRe
 
   def columns = er.columns
 
-  def symbols = er.symbols
+  //def symbols = er.symbols
 
   def javaColumns = er.javaColumns
 
@@ -48,6 +48,8 @@ class TypedExecutionResultImpl(val er: ExecutionResult) extends TypedExecutionRe
   def dumpToString = er.dumpToString
 
   def queryStatistics = er.queryStatistics
+  
+  def executionPlanDescription = er.executionPlanDescription
 
   /**
    * maps a given column that has to be a property container
