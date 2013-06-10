@@ -29,6 +29,8 @@ class TypedExecutionResultImpl(val er: ExecutionResult) extends TypedExecutionRe
 
   def next = er.next
 
+  def close = er.close
+  
   def columns = er.columns
 
   //def symbols = er.symbols
@@ -51,6 +53,7 @@ class TypedExecutionResultImpl(val er: ExecutionResult) extends TypedExecutionRe
   
   def executionPlanDescription = er.executionPlanDescription
 
+  
   /**
    * maps a given column that has to be a property container
    * to a case class
