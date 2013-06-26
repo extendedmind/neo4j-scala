@@ -43,6 +43,15 @@ trait Neo4jWrapper extends GraphDatabaseServiceProvider with Neo4jWrapperImplici
   def createNode(implicit ds: DatabaseService): Node = ds.gds.createNode
 
   /**
+   * creates a new Node with UUID from Database service
+   */
+  def createNodeWithUUID(implicit ds: DatabaseService): Node = {
+    val node = ds.gds.createNode
+    node.setProperty("uuid", java.util.UUID.randomUUID().toString().replace("-", ""))
+    node
+  }
+  
+  /**
    * convenience method to create and serialize a case class
    */
   def createNode(cc: AnyRef)(implicit ds: DatabaseService): Node =
@@ -90,6 +99,14 @@ trait Neo4jWrapper extends GraphDatabaseServiceProvider with Neo4jWrapperImplici
   def getAllNodes(implicit ds: DatabaseService): Iterable[Node] =
     ds.gds.getAllNodes
 
+  /**
+   * Returns nodes by label and property
+   *
+   * @return all nodes that match the criteria
+   */
+  def findNodesByLabelAndProperty(label: Label, key: String, value: AnyRef)(implicit ds: DatabaseService): Iterable[Node] =
+    ds.gds.findNodesByLabelAndProperty(label, key, value)
+    
   /**
    * Returns all relationship types currently in the underlying store.
    * Relationship types are added to the underlying store the first time they
