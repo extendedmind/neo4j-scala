@@ -1,76 +1,25 @@
-#Neo4j Scala wrapper library
+#Neo4j Scala Wrapper Lite
 
-The Neo4j Scala wrapper library allows you the [Neo4j open source graph database](http://neo4j.org/) through a
-domain-specific simplified language. It is written in Scala and is intended
+The Neo4j Scala Wrapper Lite allows you access the [Neo4j open source graph database](http://neo4j.org/) through a
+domain-specific simplified language in an embedded environment. It is written in Scala and is intended
 to be used in other Scala projects.
 
-This wrapper is mostly based on the work done by [Martin Kleppmann](http://twitter.com/martinkl) in his [Scala implementation of RESTful JSON HTTP resources on top of the Neo4j graph database and Jersey](http://github.com/ept/neo4j-resources) project.
-
-
-
-See this [GIST](https://gist.github.com/1331556) for a usual Neo4j Matrix Example
-
-You may find [Neo4j-Spatial-Scala](http://github.com/FaKod/neo4j-spatial-scala) interesting as well.
-
-All discussions (if there are any) see Google Group [neo4j-scala](https://groups.google.com/forum/#!forum/neo4j-scala)
-
+This wrapper is a stripped down version of [FaKod's Neo4j Scala wrapper library](https://github.com/FaKod/neo4j-scala)
+with some new additions, such as labels, to support Neo4j 2.0.0.
 
 ##Building
 
-    $ git clone git://github.com/FaKod/neo4j-scala.git
+    $ git clone git://github.com/ttiurani/neo4j-scala.git
     $ cd neo4j-scala
     $ mvn clean install
-
-Or try to maven fetch it with a Github Maven Repo:
-
-```xml
-<repositories>
-  <repository>
-    <id>fakod-snapshots</id>
-    <url>https://raw.github.com/FaKod/fakod-mvn-repo/master/snapshots</url>
-  </repository>
-  <repository>
-    <id>fakod-releases</id>
-    <url>https://raw.github.com/FaKod/fakod-mvn-repo/master/releases</url>
-  </repository>
-</repositories>
-
-<dependencies>
-  <dependency>
-    <groupId>org.neo4j</groupId>
-    <artifactId>neo4j-scala</artifactId>
-    <version>0.2.0-M2-SNAPSHOT</version>
-  </dependency>
-</dependencies>
-```
-
-##Troubleshooting
-
-Please consider using [Github issues tracker](http://github.com/fakod/neo4j-scala/issues) to submit bug reports or feature requests.
-
-#Versions
-
-##0.2.0-M2-SNAPSHOT
-
-* Switched to Neo4j Version 1.8
-* Added simple Cypher Support
-* Added programmatic access to Configuration Parameter
-* Using incremental Scala compiler now
-
-##0.2.0-M1
-
-* Switched to Neo4j Version 1.7
-* Introducing Typed Traverser for type safe traversals
-* Added REST Graph DB Provider to support REST based server access
-* Introducing REST Typed Traverser with support for server side Prune Evaluator and Return Filter
 
 #Using this library
 
 ##Graph Database Service Provider
 
 Neo4j Scala Wrapper needs a Graph Database Service Provider, it has to implement GraphDatabaseServiceProvider trait.
-One possibility is to use the EmbeddedGraphDatabaseServiceProvider for embedded Neo4j instances where you simply have to define a Neo4j storage directory.
-The class MyNeo4jClass using the wrapper is f.e.:
+Use the EmbeddedGraphDatabaseServiceProvider for embedded Neo4j instances where you simply have
+to define a Neo4j storage directory. The class MyNeo4jClass using the wrapper is f.e.:
 
 ```scala
 class MyNeo4jClass extends SomethingClass with Neo4jWrapper with EmbeddedGraphDatabaseServiceProvider {
@@ -78,13 +27,6 @@ class MyNeo4jClass extends SomethingClass with Neo4jWrapper with EmbeddedGraphDa
   . . .
 }
 ```
-
-Available are:
-
-* EmbeddedGraphDatabaseServiceProvider
-* SingletonEmbeddedGraphDatabaseServiceProvider (singleton version)
-* BatchGraphDatabaseServiceProvider (use it with Neo4jBatchIndexProvider)
-* RestGraphDatabaseServiceProvider uses the REST binding
 
 ##Transaction Wrapping
 
@@ -127,7 +69,7 @@ nodeIndex -= (Node_A)
 ##Relations
 
 
-Using this wrapper, this is how creating two relationships can look in Scala. 
+Using this wrapper, this is how creating two relationships can look in Scala.
 The String are automatically converted into Dynamic Relationsships:
 
 ```scala
@@ -157,7 +99,9 @@ start[String]("foo") match {
 
 ##Using Case Classes
 
-Neo4j provides storing keys (String) and values (Object) into Nodes. To store Case Classes the properties are stored as key/values to the Property Container, thai can be a Node or a Relation. However, Working types are limited to basic types like String, integer etc.
+Neo4j provides storing keys (String) and values (Object) into Nodes. To store Case Classes the properties are stored
+as key/values to the Property Container, thai can be a Node or a Relation. However, Working types are limited to basic
+types like String, integer etc.
 
 ```scala
 case class Test(s: String, i: Int, ji: java.lang.Integer, d: Double, l: Long, b: Boolean)
@@ -188,11 +132,11 @@ Besides, the neo4j scala binding makes it possible to write stop and returnable 
 
 ```scala
 //StopEvaluator.END_OF_GRAPH, written in a Scala idiomatic way :
-start.traverse(Traverser.Order.BREADTH_FIRST, (tp : TraversalPosition) => false, 
+start.traverse(Traverser.Order.BREADTH_FIRST, (tp : TraversalPosition) => false,
 ReturnableEvaluator.ALL_BUT_START_NODE, "foo", Direction.OUTGOING)
 
 //ReturnableEvaluator.ALL_BUT_START_NODE, written in a Scala idiomatic way :
-start.traverse(Traverser.Order.BREADTH_FIRST, StopEvaluator.END_OF_GRAPH, (tp : TraversalPosition) => tp.notStartNode(), 
+start.traverse(Traverser.Order.BREADTH_FIRST, StopEvaluator.END_OF_GRAPH, (tp : TraversalPosition) => tp.notStartNode(),
 "foo", Direction.OUTGOING)
 ```
 
@@ -223,7 +167,7 @@ myNode.doTraverse[MatrixBase](follow(BREADTH_FIRST) -- "KNOWS" ->- "CODED_BY") {
 
 ###Return and Stop Evaluator
 
-**block1** is the Stop Evaluator and **block2** the Return Evaluator, both of type PartialFunction[(T, TraversalPosition), Boolean]. Where T is MatrixBase in case of the example, TraversalPosition from the traverser and Boolean as return type. 
+**block1** is the Stop Evaluator and **block2** the Return Evaluator, both of type PartialFunction[(T, TraversalPosition), Boolean]. Where T is MatrixBase in case of the example, TraversalPosition from the traverser and Boolean as return type.
 
 PartialFunctions can be handled with a case statement, like this:
 
@@ -254,7 +198,7 @@ The example above returns an Iterable[MatrixBase]. This allows to use the powerf
 ```
 
 Where '_' is automatically replaced by MatrixBase instances.
-	
+
 Finally we can write, f.e.:
 
 ```scala
@@ -281,25 +225,19 @@ val erg1 = startWithNodes.doTraverse[MatrixBase](follow -<- "KNOWS") {
 
 Where startWithNodes is of type List[Node].
 
-
-##REST Typed Traversing 
-
-The main diffenrence between the non REST Typed Traverser is the ability to provide server side Prune Evaluator and Return Filter. This is important because otherwise all traversed data will be transfered to the client. This is possible but not always the best solution.
-
-
 ###Prune Evaluator and Max Depth
 
 The **PruneEvaluator** defines where to stop traversing relations. It has to be Java Script code that can use the position instance of type org.neo4j.graphdb.Path.
- 
+
 **max depth** is a short-hand way of specifying a prune evaluator which prunes after a certain depth. If not specified
 
-* a max depth of 1 is used and 
+* a max depth of 1 is used and
 * if a "prune evaluator" is specified instead of a max depth, no max depth limit is set.
 
 ####Examples for Prune Evaluator / MaxDepth
 Using the case class PruneEvaluator ("JAVASCRIPT" is dafault, "false" is Java Script code):
-  
-```scala    
+
+```scala
 startNode.doTraverse[Test_MatrixBase](follow -- "KNOWS" ->- "CODED_BY") {
   PruneEvaluator("false")
 } {
@@ -309,8 +247,8 @@ startNode.doTraverse[Test_MatrixBase](follow -- "KNOWS" ->- "CODED_BY") {
 ```
 
 Using a Java Script prune evaluator as a String (implicit conversion involved)
-    
-```scala  
+
+```scala
 startNode.doTraverse[Test_MatrixBase](follow(BREADTH_FIRST) -- "KNOWS" ->- "CODED_BY") {
   "position.length() > 100;"
 } {
@@ -318,7 +256,7 @@ startNode.doTraverse[Test_MatrixBase](follow(BREADTH_FIRST) -- "KNOWS" ->- "CODE
   case (x: Test_NonMatrix, _) => false
 }.toList.sortWith(_.name < _.name)
 ```
-      
+
 Using MaxDepth 100:
 
 ```scala
@@ -358,83 +296,17 @@ startNode.doTraverse[Test_MatrixBase](follow(BREADTH_FIRST) -- "KNOWS" ->- "CODE
 
 Server Side type check and Server Side Java Script Prune Evaluator
 
-```scala     
+```scala
 startNode.doTraverse[Test_MatrixBase](follow(BREADTH_FIRST) -- "KNOWS" ->- "CODED_BY",
     "position.length() >= 1",
     endNode.isOfType[Test_Matrix]
   ).toList.sortWith(_.name < _.name)
 ```
 
-##Simple Cypher Support
-
-The following example shows how to use Cypher together with typed results. In this case "execute" returns the case class Test_Matrix.
-
-```scala
-class MyClass extends Neo4jWrapper with SingletonEmbeddedGraphDatabaseServiceProvider with Cypher {
-	. . .
-	val query = "start n=node(" + nodeId + ") return n, n.name"
-
-    val typedResult = query.execute.asCC[Test_Matrix]("n")
-
-    typedResult.next.name must be_==("Neo")
-    . . .
-}
-```
-
-
-##Batch Processing
-
-Neo4j has a batch insertion mode intended for initial imports, which must run in a single thread and bypasses transactions and other checks in favor of performance. See [Batch insertion](http://docs.neo4j.org/chunked/milestone/indexing-batchinsert.html).
-
-The Java interfaces are slightly different. I wrote some wrapper classes to support nearly transparent usage of batch node and batch relation insertion. Means same code for batch insertion and for normal non batch mode. Instead of using
-
-```scala
-class Builder extends Neo4jWrapper with SingletonEmbeddedGraphDatabaseServiceProvider with Neo4jIndexProvider {...}
-```
-
-simply exchange the provider traits with
-
-```scala
-class Builder extends Neo4jWrapper with Neo4jBatchIndexProvider with BatchGraphDatabaseServiceProvider {...}
-```
-
-getting the indexes is still the same code
-
-```scala
-val nodeIndex = getNodeIndex("NodeIndex").get
-val relationIndex = getRelationIndex("RelationIndex").get
-```
-
-setting cache size:
-
-```scala
-nodeIndex.setCacheCapacity("NodeIndex", 1000000)
-relationIndex.setCacheCapacity("RelationIndex", 1000000)
-```
-
-Nevertheless, indexes are not available till flushing. To flush call:
-
-```scala
-nodeIndex.flush
-relationIndex.flush
-```
-
-After insertion, the batch index manager and batch insertion manager have to be shut down
-
-```scala
-class Builder extends Neo4jWrapper . . .{
-	. . .
-	shutdownIndex
-	shutdown(ds)
-	. . .
-}
-```
-
 Copyright and License
 ---------------------
 
-Copyright (C) 2012 [Christopher Schmidt](http://blog.fakod.eu/) 
-
+Copyright (C) 2012 [Christopher Schmidt](http://blog.fakod.eu/)
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
