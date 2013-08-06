@@ -4,6 +4,7 @@ import org.neo4j.graphdb._
 import org.specs2.mutable.SpecificationWithJUnit
 import org.neo4j.scala.{EmbeddedGraphDatabaseServiceProvider, Neo4jWrapper}
 import sys.ShutdownHookThread
+import org.neo4j.graphdb.factory.GraphDatabaseFactory
 
 /**
  * Test spec to check relationship builder and evaluators
@@ -12,6 +13,8 @@ import sys.ShutdownHookThread
 class Neo4jWrapperSpec extends SpecificationWithJUnit with Neo4jWrapper with EmbeddedGraphDatabaseServiceProvider {
 
   def neo4jStoreDir = "/tmp/temp-neo-test"
+
+  def graphDatabaseFactory = new GraphDatabaseFactory
 
   "NeoWrapper" should {
 

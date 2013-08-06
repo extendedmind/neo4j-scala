@@ -6,6 +6,7 @@ import java.util.{HashMap => jMap}
 import org.neo4j.unsafe.batchinsert.BatchInserter
 import org.neo4j.unsafe.batchinsert.BatchInserterImpl
 import org.neo4j.unsafe.batchinsert.BatchInserters
+import org.neo4j.graphdb.factory.GraphDatabaseFactory
 
 /**
  * Interface for a GraphDatabaseServiceProvider
@@ -23,6 +24,11 @@ trait GraphDatabaseServiceProvider {
 trait EmbeddedGraphDatabaseServiceProvider extends GraphDatabaseServiceProvider {
 
   /**
+   * Graph Database Factory to use to create the new
+   */
+  def graphDatabaseFactory: GraphDatabaseFactory
+  
+  /**
    * directory where to store the data files
    */
   def neo4jStoreDir: String
@@ -32,15 +38,30 @@ trait EmbeddedGraphDatabaseServiceProvider extends GraphDatabaseServiceProvider 
    * @return Map[String, String] configuration parameters
    */
   def configParams = Map[String, String]()
+  
+  /**
+   * Location to config file 
+   */
+  def configFileLocation: String = null
 
   /**
    * using an instance of an embedded graph database
    */
   val ds: DatabaseService = {
     import collection.JavaConversions.mapAsJavaMap
-    DatabaseServiceImpl(
-      new EmbeddedGraphDatabase(neo4jStoreDir, new jMap[String, String](configParams))
-    )
+    if (configFileLocation != null){
+	    DatabaseServiceImpl(
+	        graphDatabaseFactory
+	        .newEmbeddedDatabaseBuilder(neo4jStoreDir)
+	        .loadPropertiesFromFile(configFileLocation)
+	        .newGraphDatabase())
+    }else{
+	    DatabaseServiceImpl(
+	        graphDatabaseFactory
+	        .newEmbeddedDatabaseBuilder(neo4jStoreDir)
+	        .setConfig(configParams)
+	        .newGraphDatabase())   
+    }
   }
 }
 
@@ -82,44 +103,4 @@ trait SingletonEmbeddedGraphDatabaseServiceProvider extends GraphDatabaseService
    * using an instance of an embedded graph database
    */
   val ds: DatabaseService = SingeltonProvider(neo4jStoreDir, configParams)
-}
-
-/**
- * singleton provider
- */
-private[scala] object SingeltonBatchProvider {
-  private var inserter: Option[BatchInserter] = None
-  
-  
-  def apply(neo4jStoreDir: String) = inserter match {
-    case Some(x) => x
-    case None =>
-      inserter = Some(BatchInserters.inserter( neo4jStoreDir ))
-      inserter.get
-  }
-
-  lazy val ds: DatabaseService = DatabaseServiceImpl(BatchInserters.batchDatabase(inserter.get.getStoreDir))
-}
-
-/**
- * provides a specific GraphDatabaseServiceProvider for
- * Batch processing
- */
-trait BatchGraphDatabaseServiceProvider extends GraphDatabaseServiceProvider {
-
-
-  /**
-   * instance of BatchInserter
-   */
-  def batchInserter = SingeltonBatchProvider(neo4jStoreDir)
-
-  /**
-   * directory where to store the data files
-   */
-  def neo4jStoreDir: String
-
-  /**
-   * using an instance of an embedded graph database
-   */
-  val ds: DatabaseService = SingeltonBatchProvider.ds
 }

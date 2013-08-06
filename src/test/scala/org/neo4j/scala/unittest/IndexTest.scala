@@ -4,6 +4,7 @@ import org.specs2.mutable.SpecificationWithJUnit
 import org.neo4j.scala.{Neo4jIndexProvider, EmbeddedGraphDatabaseServiceProvider, Neo4jWrapper}
 import collection.JavaConversions._
 import sys.ShutdownHookThread
+import org.neo4j.graphdb.factory.GraphDatabaseFactory
 
 /**
  * Test spec to check usage of index convenience methods
@@ -15,6 +16,9 @@ class IndexTestSpec extends SpecificationWithJUnit with Neo4jWrapper with Embedd
 
   def neo4jStoreDir = "/tmp/temp-neo-index-test"
 
+  def graphDatabaseFactory = new GraphDatabaseFactory
+
+    
   override def NodeIndexConfig = ("MyTestIndex", Map("provider" -> "lucene", "type" -> "fulltext")) :: Nil
 
 

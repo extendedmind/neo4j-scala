@@ -6,6 +6,9 @@ import org.neo4j.scala.util.CaseClassDeserializer
 import org.neo4j.graphdb.{Direction, DynamicRelationshipType}
 import sys.ShutdownHookThread
 
+import CaseClassDeserializer._
+import org.neo4j.graphdb.factory.GraphDatabaseFactory
+
 /**
  * Test spec to check deserialization and serialization of case classes
  *
@@ -23,8 +26,6 @@ trait PolyBase
 case class Poly1(s: String) extends PolyBase
 
 case class Poly2(s: String) extends PolyBase
-
-import CaseClassDeserializer._
 
 class DeSerializingWithoutNeo4jSpec extends SpecificationWithJUnit {
 
@@ -58,8 +59,9 @@ class DeSerializingWithoutNeo4jSpec extends SpecificationWithJUnit {
 
 class DeSerializingSpec extends SpecificationWithJUnit with Neo4jWrapper with EmbeddedGraphDatabaseServiceProvider {
 
-  def neo4jStoreDir = "/tmp/temp-neo-test2"
-
+  def neo4jStoreDir = "/tmp/temp-neo-test2"  
+  def graphDatabaseFactory = new GraphDatabaseFactory
+    
   "Node" should {
 
     ShutdownHookThread {
