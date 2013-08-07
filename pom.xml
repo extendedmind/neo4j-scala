@@ -21,9 +21,6 @@
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <scala.version>2.10.1</scala.version>
     <neo4j.version>2.0.0-M03</neo4j.version>
-    <neo4j.shell.version>2.0.0-M03</neo4j.shell.version>
-    <neo4j.cypher.version>2.0.0-M03</neo4j.cypher.version>
-    <neo4j.rest.version>2.0.0-M03</neo4j.rest.version>
   </properties>
 
   <developers>
@@ -101,11 +98,10 @@
       <version>${neo4j.version}</version>
     </dependency>
     <dependency>
-      <groupId>org.neo4j</groupId>
-      <artifactId>neo4j-shell</artifactId>
-      <version>${neo4j.shell.version}</version>
+      <groupId>org.neo4j.app</groupId>
+      <artifactId>neo4j-server</artifactId>
+      <version>${neo4j.version}</version>
     </dependency>
-
     <dependency>
       <groupId>org.neo4j</groupId>
       <artifactId>neo4j-kernel</artifactId>

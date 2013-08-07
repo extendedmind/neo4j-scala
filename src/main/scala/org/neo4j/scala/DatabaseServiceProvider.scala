@@ -2,11 +2,15 @@ package org.neo4j.scala
 
 import org.neo4j.kernel.EmbeddedGraphDatabase
 import java.net.URI
-import java.util.{HashMap => jMap}
+import java.util.{ HashMap => jMap }
 import org.neo4j.unsafe.batchinsert.BatchInserter
 import org.neo4j.unsafe.batchinsert.BatchInserterImpl
 import org.neo4j.unsafe.batchinsert.BatchInserters
 import org.neo4j.graphdb.factory.GraphDatabaseFactory
+import org.neo4j.server.WrappingNeoServerBootstrapper
+import org.neo4j.kernel.GraphDatabaseAPI
+import org.neo4j.server.configuration.ServerConfigurator
+import org.neo4j.server.configuration.Configurator
 
 /**
  * Interface for a GraphDatabaseServiceProvider
@@ -15,7 +19,6 @@ import org.neo4j.graphdb.factory.GraphDatabaseFactory
 trait GraphDatabaseServiceProvider {
   val ds: DatabaseService
 }
-
 
 /**
  * provides a specific Database Service
@@ -27,7 +30,7 @@ trait EmbeddedGraphDatabaseServiceProvider extends GraphDatabaseServiceProvider 
    * Graph Database Factory to use to create the new
    */
   def graphDatabaseFactory: GraphDatabaseFactory
-  
+
   /**
    * directory where to store the data files
    */
@@ -38,9 +41,9 @@ trait EmbeddedGraphDatabaseServiceProvider extends GraphDatabaseServiceProvider 
    * @return Map[String, String] configuration parameters
    */
   def configParams = Map[String, String]()
-  
+
   /**
-   * Location to config file 
+   * Location to config file
    */
   def configFileLocation: String = null
 
@@ -49,18 +52,28 @@ trait EmbeddedGraphDatabaseServiceProvider extends GraphDatabaseServiceProvider 
    */
   val ds: DatabaseService = {
     import collection.JavaConversions.mapAsJavaMap
-    if (configFileLocation != null){
-	    DatabaseServiceImpl(
-	        graphDatabaseFactory
-	        .newEmbeddedDatabaseBuilder(neo4jStoreDir)
-	        .loadPropertiesFromFile(configFileLocation)
-	        .newGraphDatabase())
-    }else{
-	    DatabaseServiceImpl(
-	        graphDatabaseFactory
-	        .newEmbeddedDatabaseBuilder(neo4jStoreDir)
-	        .setConfig(configParams)
-	        .newGraphDatabase())   
+    if (configFileLocation != null) {
+      val graphDb: GraphDatabaseAPI = graphDatabaseFactory
+        .newEmbeddedDatabaseBuilder(neo4jStoreDir)
+        .loadPropertiesFromFile(configFileLocation)
+        .newGraphDatabase().asInstanceOf[GraphDatabaseAPI]
+      /*
+       * TODO: Add this at some point
+      val config: ServerConfigurator = new ServerConfigurator(graphDb);
+      config.configuration().setProperty(
+        Configurator.THIRD_PARTY_PACKAGES_KEY, "org.neo4j.extension.uuid=/db/uuid");
+      config.configuration().setProperty(
+        Configurator.WEBSERVER_PORT_PROPERTY_KEY, 7473);
+      val srv = new WrappingNeoServerBootstrapper(graphDb, config);
+      srv.start();*/
+      
+      DatabaseServiceImpl(graphDb)
+    } else {
+      DatabaseServiceImpl(
+        graphDatabaseFactory
+          .newEmbeddedDatabaseBuilder(neo4jStoreDir)
+          .setConfig(configParams)
+          .newGraphDatabase())
     }
   }
 }
@@ -76,8 +89,7 @@ private[scala] object SingeltonProvider {
     case None =>
       import collection.JavaConversions.mapAsJavaMap
       ds = Some(DatabaseServiceImpl(new EmbeddedGraphDatabase(
-        neo4jStoreDir, new jMap[String, String](configParams)))
-      )
+        neo4jStoreDir, new jMap[String, String](configParams))))
       ds.get
   }
 }
