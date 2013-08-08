@@ -46,28 +46,18 @@ trait EmbeddedGraphDatabaseServiceProvider extends GraphDatabaseServiceProvider 
    * Location to config file
    */
   def configFileLocation: String = null
-
+    
   /**
    * using an instance of an embedded graph database
    */
   val ds: DatabaseService = {
     import collection.JavaConversions.mapAsJavaMap
     if (configFileLocation != null) {
-      val graphDb: GraphDatabaseAPI = graphDatabaseFactory
-        .newEmbeddedDatabaseBuilder(neo4jStoreDir)
-        .loadPropertiesFromFile(configFileLocation)
-        .newGraphDatabase().asInstanceOf[GraphDatabaseAPI]
-      /*
-       * TODO: Add this at some point
-      val config: ServerConfigurator = new ServerConfigurator(graphDb);
-      config.configuration().setProperty(
-        Configurator.THIRD_PARTY_PACKAGES_KEY, "org.neo4j.extension.uuid=/db/uuid");
-      config.configuration().setProperty(
-        Configurator.WEBSERVER_PORT_PROPERTY_KEY, 7473);
-      val srv = new WrappingNeoServerBootstrapper(graphDb, config);
-      srv.start();*/
-      
-      DatabaseServiceImpl(graphDb)
+      DatabaseServiceImpl(
+        graphDatabaseFactory
+          .newEmbeddedDatabaseBuilder(neo4jStoreDir)
+          .loadPropertiesFromFile(configFileLocation)
+          .newGraphDatabase())
     } else {
       DatabaseServiceImpl(
         graphDatabaseFactory
