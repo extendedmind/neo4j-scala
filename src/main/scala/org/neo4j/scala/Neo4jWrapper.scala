@@ -43,12 +43,10 @@ trait Neo4jWrapper extends GraphDatabaseServiceProvider with Neo4jWrapperImplici
   def createNode(implicit ds: DatabaseService): Node = ds.gds.createNode
 
   /**
-   * creates a new Node with UUID from Database service
+   * creates a new Node with Labels from Database service
    */
-  def createNodeWithUUID(implicit ds: DatabaseService): Node = {
-    val node = ds.gds.createNode
-    node.setProperty("uuid", java.util.UUID.randomUUID().toString().replace("-", ""))
-    node
+  def createNode(labels: Label*)(implicit ds: DatabaseService): Node = {
+    ds.gds.createNode(labels:_*)
   }
   
   /**
