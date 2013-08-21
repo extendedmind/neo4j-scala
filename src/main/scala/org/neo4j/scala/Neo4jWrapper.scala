@@ -38,11 +38,6 @@ trait Neo4jWrapper extends GraphDatabaseServiceProvider with Neo4jWrapperImplici
   }
 
   /**
-   * creates a new Node from Database service
-   */
-  def createNode(implicit ds: DatabaseService): Node = ds.gds.createNode
-
-  /**
    * creates a new Node with Labels from Database service
    */
   def createNode(labels: Label*)(implicit ds: DatabaseService): Node = {
@@ -50,10 +45,11 @@ trait Neo4jWrapper extends GraphDatabaseServiceProvider with Neo4jWrapperImplici
   }
   
   /**
-   * convenience method to create and serialize a case class
+   * convenience method to create and serialize a case class using labels
    */
-  def createNode(cc: AnyRef)(implicit ds: DatabaseService): Node =
-    Neo4jWrapper.serialize(cc, createNode)
+  def createNode(cc: AnyRef, labels: Label*)(implicit ds: DatabaseService, exclusions: Option[List[String]] = None): Node = {
+    Neo4jWrapper.serialize(cc, createNode(labels:_*))
+  }
 
   /**
    * Looks up a node by id.
@@ -88,14 +84,6 @@ trait Neo4jWrapper extends GraphDatabaseServiceProvider with Neo4jWrapperImplici
    */
   def getReferenceNode(implicit ds: DatabaseService): Node =
     ds.gds.getReferenceNode
-
-  /**
-   * Returns all nodes in the node space.
-   *
-   * @return all nodes in the node space
-   */
-  def getAllNodes(implicit ds: DatabaseService): Iterable[Node] =
-    ds.gds.getAllNodes
 
   /**
    * Returns nodes by label and property
@@ -133,23 +121,27 @@ trait Neo4jWrapper extends GraphDatabaseServiceProvider with Neo4jWrapperImplici
  * Neo4jWrapper Object
  */
 object Neo4jWrapper extends Neo4jWrapperImplicits {
-  /**
-   * this name will be used to store the class name of
-   * the serialized case class that will be verified
-   * in deserialization
-   */
-  val ClassPropertyName = "__CLASS__"
 
   /**
    * serializes a given case class into a Node instance
    * for null values not property will be set
    */
-  def serialize[T <: PropertyContainer](cc: AnyRef, pc: PropertyContainer): T = {
+  def serialize[T <: PropertyContainer](cc: AnyRef, pc: PropertyContainer)(implicit exclusions: Option[List[String]] = None): T = {
     CaseClassDeserializer.serialize(cc).foreach {
       case (name, null) =>
-      case (name, value) => pc.setProperty(name, value)
+      case (name, value) => {
+        if (value != None){
+          if (exclusions.isEmpty || (exclusions.isDefined && !exclusions.get.contains(name))){
+            if (value.getClass().toString() == "class scala.Some"){
+              val actualValue = value.asInstanceOf[Some[_]].get
+              pc.setProperty(name, actualValue)
+            }else{
+              pc.setProperty(name, value)
+            }
+          }
+        }
+      }
     }
-    pc(ClassPropertyName) = cc.getClass.getName
     pc.asInstanceOf[T]
   }
 
@@ -158,37 +150,17 @@ object Neo4jWrapper extends Neo4jWrapperImplicits {
    * Some(T) if possible
    * None if not
    */
-  def toCC[T: Manifest](pc: PropertyContainer): Option[T] =
-    _toCCPossible(pc) match {
-      case Some(serializedClass) =>
-        val kv = for (k <- pc.getPropertyKeys; v = pc.getProperty(k)) yield (k -> v)
-        val o = deserialize[T](serializedClass, kv.toMap)
-        Some(o)
-      case _ => None
-    }
-
-  private def _toCCPossible[T: Manifest](pc: PropertyContainer): Option[Class[_]] = {
-    for (cpn <- pc[String](ClassPropertyName); c = Class.forName(cpn) if (manifest[T].erasure.isAssignableFrom(c)))
-      return Some(c)
-    None
+  def toCC[T: Manifest](pc: PropertyContainer)(implicit customConverters: Option[Map[String, AnyRef => AnyRef]] = None): Option[T] = {
+    val kv = for (k <- pc.getPropertyKeys; v = pc.getProperty(k)) yield (k -> v)
+    deserialize[T](manifest[T].runtimeClass, kv.toMap)
   }
-
-  /**
-   * only checks if this property container has been serialized
-   * with T
-   */
-  def toCCPossible[T: Manifest](pc: PropertyContainer): Boolean =
-    _toCCPossible(pc) match {
-      case Some(_) => true
-      case _ => false
-    }
 
   /**
    * deserializes a given case class type from a given Node instance
    * throws a IllegalArgumentException if a Nodes properties
    * do not fit to the case class properties
    */
-  def deSerialize[T: Manifest](pc: PropertyContainer): T = {
+  def deSerialize[T: Manifest](pc: PropertyContainer)(implicit customConverters: Option[Map[String, AnyRef => AnyRef]] = None): T = {
     toCC[T](pc) match {
       case Some(t) => t
       case _ => throw new IllegalArgumentException("given Case Class: " +

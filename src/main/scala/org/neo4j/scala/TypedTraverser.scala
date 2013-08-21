@@ -165,45 +165,4 @@ trait TypedTraverser extends TypedTraverserBase {
       new TypedPropertyContainerIterator[T](traverser.iterator)
     }
   }
-
-  /**
-   * Enhances a List of Nodes with a doTraverse method
-   * @param list list of nodes
-   */
-  implicit def nodeListToTraverse(list: List[Node]) = new {
-
-    /**
-     * creates a traversal Iterable starting traversals for every Node in the list
-     * stopEval and RetEval are called with (Nodes of) type T.
-     * The returned Iterable can be converted to List. F. e.:
-     *
-     * <pre><code>
-     * myListOfNodes.doTraverse[MatrixBase](follow(BREADTH_FIRST) -- "KNOWS" ->- "CODED_BY" -<- "FOO") {
-     * END_OF_GRAPH
-     * } {
-     * case (x: Matrix, tp) if (tp.depth == 2) => x.name.length > 2
-     * case (x: NonMatrix, _) => false
-     * }.toList.sortWith(_.name < _.name)
-     * </code></pre>
-     *
-     * All Nodes are preconverted to a List[T] and distinct
-     *
-     * @tparam T result type (nodes are converted to T)
-     * @param rb RelationBuffer to define Directions and RelationTypes
-     * @param stopEval Partial Function for stop evaluator function
-     * @param retEval Partial Function for return evaluator function
-     * @return Iterable[T] of converted nodes of type T
-     */
-    def doTraverse[T: Manifest](rb: RelationBuffer)
-                               (stopEval: PartialFunction[(T, TraversalPosition), Boolean])
-                               (retEval: PartialFunction[(T, TraversalPosition), Boolean]): Iterable[T] = {
-      val nodes = list.par.map {
-        _.doTraverse[T](rb)(stopEval)(retEval).toList
-      }.flatMap(l => l).distinct
-
-      new Iterable[T] {
-        def iterator = nodes.iterator
-      }
-    }
-  }
 }

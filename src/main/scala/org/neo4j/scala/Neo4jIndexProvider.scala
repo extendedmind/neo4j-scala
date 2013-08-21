@@ -45,20 +45,23 @@ trait Neo4jIndexProvider {
   /**
    * lazy initializes Indexes for Nodes
    */
-  private def getNodeIndexStore =
-    nodeIndexStore match {
-      case null =>
-        nodeIndexStore = mutableMap[String, Index[Node]]()
-        for (forNode <- NodeIndexConfig) {
-          nodeIndexStore += forNode._1 ->
-            (forNode._2 match {
-              case Some(config) => getIndexManager.forNodes(forNode._1, config)
-              case _ => getIndexManager.forNodes(forNode._1)
-            })
-        }
-        nodeIndexStore
-      case x => x
+  private def getNodeIndexStore = {
+    this.synchronized{
+      nodeIndexStore match {
+        case null =>
+          nodeIndexStore = mutableMap[String, Index[Node]]()
+          for (forNode <- NodeIndexConfig) {
+            nodeIndexStore += forNode._1 ->
+              (forNode._2 match {
+                case Some(config) => getIndexManager.forNodes(forNode._1, config)
+                case _ => getIndexManager.forNodes(forNode._1)
+              })
+          }
+          nodeIndexStore
+        case x => x
+      }
     }
+  }
 
   /**
    * lazy initializes Indexes for Relations
@@ -87,7 +90,9 @@ trait Neo4jIndexProvider {
   /**
    * @return Option[Index[Node]] the created index if available
    */
-  def getNodeIndex(name: String) = getNodeIndexStore.get(name)
+  def getNodeIndex(name: String) = {
+    getNodeIndexStore.get(name)
+  }
 
   /**
    * @return Option[RelationshipIndex] the created index if available

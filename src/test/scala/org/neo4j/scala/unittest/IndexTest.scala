@@ -5,6 +5,7 @@ import org.neo4j.scala.{Neo4jIndexProvider, EmbeddedGraphDatabaseServiceProvider
 import collection.JavaConversions._
 import sys.ShutdownHookThread
 import org.neo4j.graphdb.factory.GraphDatabaseFactory
+import org.neo4j.scala.TestLabel
 
 /**
  * Test spec to check usage of index convenience methods
@@ -18,10 +19,8 @@ class IndexTestSpec extends SpecificationWithJUnit with Neo4jWrapper with Embedd
 
   def graphDatabaseFactory = new GraphDatabaseFactory
 
-    
   override def NodeIndexConfig = ("MyTestIndex", Map("provider" -> "lucene", "type" -> "fulltext")) :: Nil
-
-
+  
   "Neo4jIndexProvider" should {
 
     ShutdownHookThread {
@@ -29,42 +28,36 @@ class IndexTestSpec extends SpecificationWithJUnit with Neo4jWrapper with Embedd
     }
 
     "use the fulltext search index" in {
-
-      val nodeIndex = getNodeIndex("MyTestIndex").get
-
       withTx {
         implicit db =>
+          val nodeIndex = getNodeIndex("MyTestIndex").get
 
-        val theMatrix = createNode
-        val theMatrixReloaded = createNode
-        theMatrixReloaded.setProperty("name", "theMatrixReloaded")
-
-        nodeIndex +=(theMatrix, "title", "The Matrix")
-        nodeIndex +=(theMatrixReloaded, "title", "The Matrix Reloaded")
-
-        // search in the fulltext index
-        val found = nodeIndex.query("title", "reloAdEd")
-        found.size must beGreaterThanOrEqualTo(1)
+          val theMatrix = createNode(TestLabel.TEST)
+          val theMatrixReloaded = createNode(TestLabel.TEST)
+          theMatrixReloaded.setProperty("name", "theMatrixReloaded")
+  
+          nodeIndex +=(theMatrix, "title", "The Matrix")
+          nodeIndex +=(theMatrixReloaded, "title", "The Matrix Reloaded")
+  
+          // search in the fulltext index
+          val found = nodeIndex.query("title", "reloAdEd")
+          found.size must beGreaterThanOrEqualTo(1)
       }
     }
-/* HACK: for some reason getting getNodeIndex returns None the second time it's called
- *
     "remove items from index" in {
-
-      val nodeIndex = getNodeIndex("MyTestIndex").get
-
       withTx {
         implicit db =>
+          val nodeIndex = getNodeIndex("MyTestIndex").get
 
-        val found = nodeIndex.query("title", "reloAdEd")
-        val size = found.size
-        for (f <- found.iterator)
-          nodeIndex -= f
-
-        // search in the fulltext index
-        val found2 = nodeIndex.query("title", "reloAdEd")
-        found2.size must beLessThanOrEqualTo(size)
+          val found = nodeIndex.query("title", "reloAdEd")
+          val size = found.size
+          for (f <- found.iterator)
+            nodeIndex -= f
+  
+          // search in the fulltext index
+          val found2 = nodeIndex.query("title", "reloAdEd")
+          found2.size must beLessThanOrEqualTo(size)
       }
-    }*/
+    }
   }
 }

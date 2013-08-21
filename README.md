@@ -142,7 +142,7 @@ start.traverse(Traverser.Order.BREADTH_FIRST, StopEvaluator.END_OF_GRAPH, (tp : 
 
 ##Typed Traversing
 
-The traverser mentioned above processes and returns Nodes resp. Property Container. To allow a more type safe traverser the TypedTraverser was introduced. The basic semantic is that you have to define the type (a case class) that should be returned (while inheritance is respected).
+The traverser mentioned above processes and returns Nodes resp. Property Container. To allow a more type safe traverser the TypedTraverser was introduced. The basic semantic is that you have to define the type (a case class) that should be returned.
 But first define Relation Types and Directions:
 
 ###Relation Types and Direction
@@ -155,10 +155,10 @@ follow -<- "BAR" -- "FOO"                       // INCOMING for "BAR", BOTH for 
 follow(DEPTH_FIRST) ->- "FOOBAR"                // OUTGOING for "FOOBAR"
 ```
 
-So the traverser, that returns an Iterable[MatrixBase], can be written like this:
+So the traverser, that returns an Iterable[Matrix], can be written like this:
 
 ```scala
-myNode.doTraverse[MatrixBase](follow(BREADTH_FIRST) -- "KNOWS" ->- "CODED_BY") {
+myNode.doTraverse[Matrix](follow(BREADTH_FIRST) -- "KNOWS" ->- "CODED_BY") {
     . . .block1. . .
 } {
     . . .block2. . .
@@ -209,21 +209,6 @@ val list:List[MatrixBase] = node.doTraverse[MatrixBase](follow -<- "KNOWS") {
     case (x: NonMatrix, _) => false
 }.toList.sortWith(_.name < _.name)
 ```
-
-###Using a List of Nodes
-
-Instead of one Node you can use a List of Nodes (List[Node]). The given traverser is started multithreaded for every node in the List. The resulting threads are joined, the result-lists are appended and Node duplicates removed. F.e:
-
-```scala
-val erg1 = startWithNodes.doTraverse[MatrixBase](follow -<- "KNOWS") {
-    case _ => false
-  } {
-    case (x: Matrix, _) => true
-    case (x: NonMatrix, _) => false
-  }.toList.sortWith(_.name < _.name)
-```
-
-Where startWithNodes is of type List[Node].
 
 ###Prune Evaluator and Max Depth
 

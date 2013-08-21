@@ -1,7 +1,7 @@
 package org.neo4j.scala.util
 
 import scalax.rules.scalasig._
-import collection.mutable.{SynchronizedMap, ArrayBuffer, HashMap}
+import collection.mutable.{ SynchronizedMap, ArrayBuffer, HashMap }
 
 /**
  * helper class to store Class object
@@ -16,27 +16,29 @@ object CaseClassDeserializer {
   /**
    * Method Map cache for method serialize
    */
-  private val methodCache = new HashMap[Class[_], Map[String, java.lang.reflect.Method]]()
-    with SynchronizedMap[Class[_], Map[String, java.lang.reflect.Method]]
+  private val methodCache = new HashMap[Class[_], Map[String, java.lang.reflect.Method]]() with SynchronizedMap[Class[_], Map[String, java.lang.reflect.Method]]
 
   /**
    * signature parser cache
    */
-  private val sigParserCache = new HashMap[Class[_], Seq[(String, JavaType)]]()
-    with SynchronizedMap[Class[_], Seq[(String, JavaType)]]
+  private val sigParserCache = new HashMap[Class[_], Seq[(String, JavaType)]]() with SynchronizedMap[Class[_], Seq[(String, JavaType)]]
 
   /**
    * default behaviour for T == serialized class
    */
-  def deserialize[T: Manifest](m: Map[String, AnyRef]): T =
-    deserialize[T](manifest[T].erasure, m)
+  def deserialize[T: Manifest](m: Map[String, AnyRef])(implicit customConverters: Option[Map[String, AnyRef => AnyRef]] = None): Option[T] =
+    deserialize[T](manifest[T].runtimeClass, m)
 
   /**
    * convenience method using class manifest
    * use it like <code>val test = deserialize[Test](myMap)<code>
    */
-  def deserialize[T: Manifest](serializedClass: Class[_], m: Map[String, AnyRef]): T =
-    deserialize(m, JavaType(serializedClass)).asInstanceOf[T]
+  def deserialize[T: Manifest](serializedClass: Class[_], m: Map[String, AnyRef])(implicit customConverters: Option[Map[String, AnyRef => AnyRef]] = None): Option[T] = {
+    deserialize(m, JavaType(serializedClass)) match {
+      case Some(o) => Some(o.asInstanceOf[T])
+      case None => None
+    }
+  }
 
   /**
    * Creates a case class instance from parameter map
@@ -44,7 +46,7 @@ object CaseClassDeserializer {
    * @param m Map[String, AnyRef] map of parameter name an parameter type
    * @param javaTypeTarget JavaType case class class to create
    */
-  def deserialize(m: Map[String, AnyRef], javaTypeTarget: JavaType) = {
+  def deserialize(m: Map[String, AnyRef], javaTypeTarget: JavaType)(implicit customConverters: Option[Map[String, AnyRef => AnyRef]] = None): Option[AnyRef] = {
     require(javaTypeTarget.c.getConstructors.length == 1, "Case classes must only have one constructor.")
     val constructor = javaTypeTarget.c.getConstructors.head
     val params = sigParserCache.getOrElseUpdate(javaTypeTarget.c, CaseClassSigParser.parse(javaTypeTarget.c))
@@ -52,41 +54,57 @@ object CaseClassDeserializer {
     val values = new ArrayBuffer[AnyRef]
     for ((paramName, paramType) <- params) {
       val field = m.getOrElse(paramName, null)
-
-      field match {
-        // use null if the property does not exist
-        case null =>
-          values += null
-        // if the value is directly assignable: use it
-        case x: AnyRef if (x.getClass.isAssignableFrom(paramType.c)) =>
-          values += x
-        case x: Array[_] =>
-          values += x
-        // otherwise try to create an instance using der String Constructor
-        case x: AnyRef =>
-          val paramCtor = paramType.c.getConstructor(classOf[String])
-          val value = paramCtor.newInstance(x).asInstanceOf[AnyRef]
-          values += value
+      if (field == null){
+        // If parameter is an Option, set value to None when value is not stored in the database        
+        if (paramType.c.toString() == "class scala.Option"){
+          values += None
+        } else {
+          // If missing is not Option, deserializing fails
+          return None
+        }
+      }else{
+        // Custom converters override default behavior
+        if (customConverters.isDefined && customConverters.get.contains(paramName)) {
+          values += customConverters.get.get(paramName).get(field)
+        } else {
+          field match {
+            // First try to match Option
+            case x: AnyRef if (paramType.c.toString() == "class scala.Option") =>
+              values += Some(x)
+            // if the value is directly assignable: use it
+            case x: AnyRef if (x.getClass.isAssignableFrom(paramType.c)) =>
+              values += x
+            case x: Array[_] =>
+              values += x
+            // otherwise try to create an instance using der String Constructor
+            case x: AnyRef =>
+              val paramCtor = paramType.c.getConstructor(classOf[String])
+              val value = paramCtor.newInstance(x).asInstanceOf[AnyRef]
+              values += value
+          }
+        }
       }
     }
-    constructor.newInstance(values.toArray: _*).asInstanceOf[AnyRef]
+    Some(constructor.newInstance(values.toArray: _*).asInstanceOf[AnyRef])
   }
 
   /**
    * creates a map from case class parameter
    * @param o AnyRef case class instance
    */
-  def serialize(o: AnyRef): Map[String, AnyRef] = {
+  def serialize(o: AnyRef): Map[String, AnyRef] = {    
     val methods = methodCache.getOrElseUpdate(o.getClass,
       o.getClass.getDeclaredMethods
         .filter {
         _.getParameterTypes.isEmpty
-      }
-        .map {
+      }.map {
         m => m.getName -> m
       }.toMap)
     val params = sigParserCache.getOrElseUpdate(o.getClass, CaseClassSigParser.parse(o.getClass))
-    val l = for ((paramName, _) <- params; value = methods.get(paramName).get.invoke(o)) yield (paramName, value)
+    val l = for (
+              (paramName, _) <- params; 
+              value = methods.get(paramName).get.invoke(o)
+              ) yield (paramName, value)
     l.toMap
   }
 }
@@ -95,8 +113,7 @@ class MissingPickledSig(clazz: Class[_]) extends Error("Failed to parse pickled 
 
 class MissingExpectedType(clazz: Class[_]) extends Error(
   "Parsed pickled Scala signature, but no expected type found: %s"
-    .format(clazz)
-)
+    .format(clazz))
 
 object CaseClassSigParser {
   val SCALA_SIG = "ScalaSig"
@@ -148,13 +165,13 @@ object CaseClassSigParser {
       .map(_.asInstanceOf[MethodSymbol])
       .zipWithIndex
       .flatMap {
-      case (ms, idx) => {
-        ms.infoType match {
-          case NullaryMethodType(t: TypeRefType) => Some(ms.name -> typeRef2JavaType(t))
-          case _ => None
+        case (ms, idx) => {
+          ms.infoType match {
+            case NullaryMethodType(t: TypeRefType) => Some(ms.name -> typeRef2JavaType(t))
+            case _ => None
+          }
         }
       }
-    }
   }
 
   protected def typeRef2JavaType(ref: TypeRefType): JavaType = {

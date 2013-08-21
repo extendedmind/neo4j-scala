@@ -49,9 +49,7 @@ trait Neo4jWrapperImplicits {
   /**
    * for serialization
    */
-  implicit def nodeToCaseClass(pc: PropertyContainer) = new {
+  implicit def nodeToCaseClass(pc: PropertyContainer)(implicit customConverters: Option[Map[String, AnyRef => AnyRef]] = None) = new {
     def toCC[T: Manifest]: Option[T] = Neo4jWrapper.toCC[T](pc)
-
-    def toCCPossible[T: Manifest]: Boolean = Neo4jWrapper.toCCPossible[T](pc)
   }
 }
