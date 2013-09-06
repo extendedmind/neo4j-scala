@@ -212,6 +212,7 @@ object CaseClassSigParser {
     case "scala.Char" => classOf[java.lang.Character]
     case "scala.Any" => classOf[Any]
     case "scala.AnyRef" => classOf[AnyRef]
+    case "scala.Option" => classOf[Option[_]]
     case name => Class.forName(name)
   }
 }

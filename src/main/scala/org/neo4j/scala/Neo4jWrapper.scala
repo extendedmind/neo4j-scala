@@ -5,6 +5,7 @@ import collection.JavaConversions._
 import CaseClassDeserializer._
 import org.neo4j.graphdb._
 import index.IndexManager
+import org.neo4j.tooling.GlobalGraphOperations
 
 /**
  * Extend your class with this trait to get really neat new notation for creating
@@ -93,6 +94,14 @@ trait Neo4jWrapper extends GraphDatabaseServiceProvider with Neo4jWrapperImplici
   def findNodesByLabelAndProperty(label: Label, key: String, value: AnyRef)(implicit ds: DatabaseService): Iterable[Node] =
     ds.gds.findNodesByLabelAndProperty(label, key, value)
     
+  /**
+   * Returns all nodes by label
+   *
+   * @return all nodes that match the criteria
+   */
+  def findNodesByLabel(label: Label)(implicit ds: DatabaseService): Iterable[Node] =
+    GlobalGraphOperations.at(ds.gds).getAllNodesWithLabel(label)  
+ 
   /**
    * Returns all relationship types currently in the underlying store.
    * Relationship types are added to the underlying store the first time they
