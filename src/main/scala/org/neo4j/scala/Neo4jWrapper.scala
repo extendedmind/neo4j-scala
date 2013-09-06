@@ -139,16 +139,21 @@ object Neo4jWrapper extends Neo4jWrapperImplicits {
     CaseClassDeserializer.serialize(cc).foreach {
       case (name, null) =>
       case (name, value) => {
-        if (value != None){
-          if (exclusions.isEmpty || (exclusions.isDefined && !exclusions.get.contains(name))){
+        if (exclusions.isEmpty || (exclusions.isDefined && !exclusions.get.contains(name))){
+          if (value != None){
             if (value.getClass().toString() == "class scala.Some"){
               val actualValue = value.asInstanceOf[Some[_]].get
               pc.setProperty(name, actualValue)
             }else{
               pc.setProperty(name, value)
             }
+          }else{
+            // Remove the property from node if it is there
+            if (pc.hasProperty(name)){
+              pc.removeProperty(name)
+            }
           }
-        }
+        } 
       }
     }
     pc.asInstanceOf[T]
