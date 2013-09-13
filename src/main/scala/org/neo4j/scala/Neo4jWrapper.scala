@@ -26,15 +26,13 @@ trait Neo4jWrapper extends GraphDatabaseServiceProvider with Neo4jWrapperImplici
    * commit otherwise; and return the return value from the operation.
    */
   def withTx[T <: Any](operation: DatabaseService => T): T = {
-    val tx = synchronized {
-      ds.gds.beginTx
-    }
+    val tx = ds.gds.beginTx
     try {
       val ret = operation(ds)
       tx.success
       return ret
     } finally {
-      tx.finish
+      tx.close()
     }
   }
 
