@@ -6,7 +6,7 @@
   <artifactId>neo4j-scala</artifactId>
   <packaging>jar</packaging>
   <name>Neo4j Scala</name>
-  <version>2.0.3</version>
+  <version>2.2.0</version>
   <description>Scala Wrapper Lite for Neo4j Graph Database</description>
   <url>http://github.com/extendedmind/neo4j-scala</url>
   <inceptionYear>2011</inceptionYear>
@@ -27,7 +27,7 @@
 
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <scala.version>2.10.3</scala.version>
+    <scala.version>2.10.5</scala.version>
     <neo4j.version>${project.version}</neo4j.version>
   </properties>
 
