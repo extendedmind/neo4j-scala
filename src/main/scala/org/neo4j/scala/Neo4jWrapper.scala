@@ -22,14 +22,21 @@ import org.neo4j.tooling.GlobalGraphOperations
 trait Neo4jWrapper extends GraphDatabaseServiceProvider with Neo4jWrapperImplicits {
 
   /**
-   * Execute instructions within a Neo4j transaction; rollback if exception is raised and
-   * commit otherwise; and return the return value from the operation.
+   * Execute instructions within a Neo4j transaction; rollback if Left is returned or
+   * exception is raised and commit otherwise; and return the return value from the operation.
    */
   def withTx[T <: Any](operation: DatabaseService => T): T = {
     val tx = ds.gds.beginTx
     try {
       val ret = operation(ds)
-      tx.success
+      ret match {
+        case _: Left[_, _]    => {
+          tx.failure()
+        }
+        case _         => {
+          tx.success() 
+        }
+      }
       return ret
     } finally {
       tx.close()

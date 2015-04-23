@@ -30,7 +30,8 @@ class MyNeo4jClass extends SomethingClass with Neo4jWrapper with EmbeddedGraphDa
 
 ##Transaction Wrapping
 
-Transactions are wrapped by withTx. After leaving the "scope" success is called (or rollback if an exception is raised):
+Transactions are wrapped by withTx. After leaving the "scope" success is called (or rollback if 
+an exception is raised or Left is returned):
 
 ```scala
 withTx {
