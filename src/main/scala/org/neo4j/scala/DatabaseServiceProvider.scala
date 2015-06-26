@@ -40,7 +40,7 @@ trait EmbeddedGraphDatabaseServiceProvider extends GraphDatabaseServiceProvider 
    * setup configuration parameters
    * @return Map[String, String] configuration parameters
    */
-  def configParams = Map[String, String]()
+  def configParams = scala.collection.mutable.Map[String, String]()
 
   /**
    * Location to config file
@@ -53,11 +53,13 @@ trait EmbeddedGraphDatabaseServiceProvider extends GraphDatabaseServiceProvider 
   val ds: DatabaseService = {
     import collection.JavaConversions.mapAsJavaMap
     if (configFileLocation != null) {
-      DatabaseServiceImpl(
-        graphDatabaseFactory
+      val gdb = graphDatabaseFactory
           .newEmbeddedDatabaseBuilder(neo4jStoreDir)
-          .loadPropertiesFromFile(configFileLocation)
-          .newGraphDatabase())
+          .loadPropertiesFromFile(configFileLocation);
+      if (configParams.size > 0){
+        configParams.foreach{ case(key, value) => gdb.setConfig(key, value)}
+      }
+      DatabaseServiceImpl(gdb.newGraphDatabase())
     } else {
       DatabaseServiceImpl(
         graphDatabaseFactory
