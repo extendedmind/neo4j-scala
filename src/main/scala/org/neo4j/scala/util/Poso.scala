@@ -27,14 +27,14 @@ object CaseClassDeserializer {
    * default behaviour for T == serialized class
    */
   def deserialize[T: Manifest](m: Map[String, AnyRef])(implicit customConverters: Option[Map[String, AnyRef => AnyRef]] = None): Option[T] =
-    deserialize[T](manifest[T].runtimeClass, m)
+    deserializeManifest[T](manifest[T].runtimeClass, m)
 
   /**
    * convenience method using class manifest
    * use it like <code>val test = deserialize[Test](myMap)<code>
    */
-  def deserialize[T: Manifest](serializedClass: Class[_], m: Map[String, AnyRef])(implicit customConverters: Option[Map[String, AnyRef => AnyRef]] = None): Option[T] = {
-    deserialize(m, JavaType(serializedClass)) match {
+  def deserializeManifest[T: Manifest](serializedClass: Class[_], m: Map[String, AnyRef])(implicit customConverters: Option[Map[String, AnyRef => AnyRef]] = None): Option[T] = {
+    deserializeMap(m, JavaType(serializedClass)) match {
       case Some(o) => Some(o.asInstanceOf[T])
       case None => None
     }
@@ -46,7 +46,7 @@ object CaseClassDeserializer {
    * @param m Map[String, AnyRef] map of parameter name an parameter type
    * @param javaTypeTarget JavaType case class class to create
    */
-  def deserialize(m: Map[String, AnyRef], javaTypeTarget: JavaType)(implicit customConverters: Option[Map[String, AnyRef => AnyRef]] = None): Option[AnyRef] = {
+  def deserializeMap(m: Map[String, AnyRef], javaTypeTarget: JavaType)(implicit customConverters: Option[Map[String, AnyRef => AnyRef]] = None): Option[AnyRef] = {
     require(javaTypeTarget.c.getConstructors.length == 1, "Case classes must only have one constructor.")
     val constructor = javaTypeTarget.c.getConstructors.head
     val params = sigParserCache.getOrElseUpdate(javaTypeTarget.c, CaseClassSigParser.parse(javaTypeTarget.c))
@@ -55,7 +55,7 @@ object CaseClassDeserializer {
     for ((paramName, paramType) <- params) {
       val field = m.getOrElse(paramName, null)
       if (field == null){
-        // If parameter is an Option, set value to None when value is not stored in the database        
+        // If parameter is an Option, set value to None when value is not stored in the database
         if (paramType.c.toString() == "class scala.Option"){
           values += None
         } else {
@@ -92,7 +92,7 @@ object CaseClassDeserializer {
    * creates a map from case class parameter
    * @param o AnyRef case class instance
    */
-  def serialize(o: AnyRef): Map[String, AnyRef] = {    
+  def serialize(o: AnyRef): Map[String, AnyRef] = {
     val methods = methodCache.getOrElseUpdate(o.getClass,
       o.getClass.getDeclaredMethods
         .filter {
@@ -102,7 +102,7 @@ object CaseClassDeserializer {
       }.toMap)
     val params = sigParserCache.getOrElseUpdate(o.getClass, CaseClassSigParser.parse(o.getClass))
     val l = for (
-              (paramName, _) <- params; 
+              (paramName, _) <- params;
               value = methods.get(paramName).get.invoke(o)
               ) yield (paramName, value)
     l.toMap

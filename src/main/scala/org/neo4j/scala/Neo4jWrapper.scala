@@ -34,7 +34,7 @@ trait Neo4jWrapper extends GraphDatabaseServiceProvider with Neo4jWrapperImplici
           tx.failure()
         }
         case _         => {
-          tx.success() 
+          tx.success()
         }
       }
       return ret
@@ -49,7 +49,7 @@ trait Neo4jWrapper extends GraphDatabaseServiceProvider with Neo4jWrapperImplici
   def createNode(labels: Label*)(implicit ds: DatabaseService): Node = {
     ds.gds.createNode(labels:_*)
   }
-  
+
   /**
    * convenience method to create and serialize a case class using labels
    */
@@ -84,15 +84,15 @@ trait Neo4jWrapper extends GraphDatabaseServiceProvider with Neo4jWrapperImplici
    */
   def findNodesByLabelAndProperty(label: Label, key: String, value: AnyRef)(implicit ds: DatabaseService): Iterable[Node] =
     ds.gds.findNodesByLabelAndProperty(label, key, value)
-    
+
   /**
    * Returns all nodes by label
    *
    * @return all nodes that match the criteria
    */
   def findNodesByLabel(label: Label)(implicit ds: DatabaseService): Iterable[Node] =
-    GlobalGraphOperations.at(ds.gds).getAllNodesWithLabel(label)  
- 
+    GlobalGraphOperations.at(ds.gds).getAllNodesWithLabel(label)
+
   /**
    * Returns all relationship types currently in the underlying store.
    * Relationship types are added to the underlying store the first time they
@@ -144,7 +144,7 @@ object Neo4jWrapper extends Neo4jWrapperImplicits {
               pc.removeProperty(name)
             }
           }
-        } 
+        }
       }
     }
     pc.asInstanceOf[T]
@@ -157,7 +157,7 @@ object Neo4jWrapper extends Neo4jWrapperImplicits {
    */
   def toCC[T: Manifest](pc: PropertyContainer)(implicit customConverters: Option[Map[String, AnyRef => AnyRef]] = None): Option[T] = {
     val kv = for (k <- pc.getPropertyKeys; v = pc.getProperty(k)) yield (k -> v)
-    deserialize[T](manifest[T].runtimeClass, kv.toMap)
+    deserializeManifest[T](manifest[T].runtimeClass, kv.toMap)
   }
 
   /**
