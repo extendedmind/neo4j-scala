@@ -5,7 +5,6 @@ import org.neo4j.test.ImpermanentGraphDatabase
 import java.util.{HashMap => jMap}
 import scala.collection.JavaConversions.mapAsJavaMap
 import org.neo4j.test.TestGraphDatabaseFactory
-import org.neo4j.server.database.GraphDatabaseFactory
 
 /**
  * provides a specific Database Service
