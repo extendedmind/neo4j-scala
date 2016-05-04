@@ -26,22 +26,6 @@ trait Neo4jWrapperImplicits {
   implicit def propertyContainer2RichPropertyContainer(propertyContainer: PropertyContainer) = new RichPropertyContainer(propertyContainer)
 
   /**
-   * creates a functional correct StopEvaluator instance
-   */
-  implicit def fn2StopEvaluator(e: TraversalPosition => Boolean) =
-    new StopEvaluator() {
-      def isStopNode(traversalPosition: TraversalPosition) = e(traversalPosition)
-    }
-
-  /**
-   * creates a functional correct ReturnableEvaluator instance
-   */
-  implicit def fn2ReturnableEvaluator(e: TraversalPosition => Boolean) =
-    new ReturnableEvaluator() {
-      def isReturnableNode(traversalPosition: TraversalPosition) = e(traversalPosition)
-    }
-
-  /**
    * Stuff for Indexes
    */
   implicit def indexManager(implicit ds: DatabaseService) = ds.gds.index

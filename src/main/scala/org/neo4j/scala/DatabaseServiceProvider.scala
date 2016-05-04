@@ -1,16 +1,9 @@
 package org.neo4j.scala
 
-import org.neo4j.kernel.EmbeddedGraphDatabase
 import java.net.URI
 import java.util.{ HashMap => jMap }
 import org.neo4j.unsafe.batchinsert.BatchInserter
-import org.neo4j.unsafe.batchinsert.BatchInserterImpl
-import org.neo4j.unsafe.batchinsert.BatchInserters
 import org.neo4j.graphdb.factory.GraphDatabaseFactory
-import org.neo4j.server.WrappingNeoServerBootstrapper
-import org.neo4j.kernel.GraphDatabaseAPI
-import org.neo4j.server.configuration.ServerConfigurator
-import org.neo4j.server.configuration.Configurator
 
 /**
  * Interface for a GraphDatabaseServiceProvider
@@ -46,7 +39,7 @@ trait EmbeddedGraphDatabaseServiceProvider extends GraphDatabaseServiceProvider 
    * Location to config file
    */
   def configFileLocation: String = null
-    
+
   /**
    * using an instance of an embedded graph database
    */
@@ -55,13 +48,13 @@ trait EmbeddedGraphDatabaseServiceProvider extends GraphDatabaseServiceProvider 
     if (configFileLocation != null) {
       DatabaseServiceImpl(
         graphDatabaseFactory
-          .newEmbeddedDatabaseBuilder(neo4jStoreDir)
+          .newEmbeddedDatabaseBuilder(new java.io.File(neo4jStoreDir))
           .loadPropertiesFromFile(configFileLocation)
           .newGraphDatabase())
     } else {
       DatabaseServiceImpl(
         graphDatabaseFactory
-          .newEmbeddedDatabaseBuilder(neo4jStoreDir)
+          .newEmbeddedDatabaseBuilder(new java.io.File(neo4jStoreDir))
           .setConfig(configParams)
           .newGraphDatabase())
     }
